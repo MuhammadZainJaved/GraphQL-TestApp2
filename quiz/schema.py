@@ -1,3 +1,4 @@
+from unicodedata import category
 import graphene
 from graphene_django import DjangoObjectType
 from graphene_django import DjangoListField
@@ -28,12 +29,39 @@ class Query(graphene.ObjectType):
 
     all_questions = graphene.Field(QuestionType, id=graphene.Int())
     all_answers = graphene.List(AnswerType, id=graphene.Int())
+    quiz = graphene.String()
+    all_quizzes = DjangoListField(QuizzesType)
 
     def resolve_all_questions(root, info, id):
         return Question.objects.get(pk=id)
     def resolve_all_answers(root, info, id):
         return Answer.objects.filter(question=id)
+    def resolve_quiz(root, info):
+        return f"There is a quiz"
 
-schema = graphene.Schema(query=Query)
+
+class CategoryMutation(graphene.Mutation):
+    class Arguments:
+        id = graphene.ID()
+        name = graphene.String(required=True)
+
+    category = graphene.Field(CategoryType)
+
+    @classmethod
+    def mutate(cls, root,info, name, id):
+        # category = Category(name=name)
+        category = Category.objects.get_or_create(id=id, name=name)
+        # print(category.__dict__) 
+        # category.name = name
+        # print(category.name)
+        # "8"* "a"
+        # category.save()
+        return CategoryMutation(category=category)
+
+
+class Mutation(graphene.ObjectType):
+    update_category = CategoryMutation.Field()
+
+schema = graphene.Schema(query=Query, mutation=Mutation)
 
 
